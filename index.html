@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TOEIC Master v3</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main class="app-shell">
+  <header class="topbar">
+    <div>
+      <p class="eyebrow">TOEIC 650 → 750+</p>
+      <h1>TOEIC Master</h1>
+      <p class="subtitle">分類單字、間隔複習與文法題庫整合版</p>
+    </div>
+    <div class="top-actions">
+      <button id="themeButton" class="ghost-button">深色模式</button>
+      <button id="resetButton" class="ghost-button danger-text">重設進度</button>
+    </div>
+  </header>
+
+  <nav class="main-nav">
+    <button class="nav-button active" data-view="vocab">單字練習</button>
+    <button class="nav-button" data-view="grammar">文法題庫</button>
+  </nav>
+
+  <section id="vocabView">
+    <section class="dashboard">
+      <article class="metric-card"><span>今日學習</span><strong id="todayCount">0</strong></article>
+      <article class="metric-card"><span>今日目標</span><strong><span id="goalCount">0</span>/30</strong></article>
+      <article class="metric-card"><span>已完成</span><strong><span id="completedCount">0</span>/<span id="totalCount">0</span></strong></article>
+      <article class="metric-card"><span>錯題</span><strong id="wrongCount">0</strong></article>
+    </section>
+
+    <section class="progress-panel">
+      <div class="progress-copy"><span>總學習進度</span><strong id="progressText">0%</strong></div>
+      <div class="progress-track"><div id="progressBar" class="progress-bar"></div></div>
+    </section>
+
+    <section class="toolbar">
+      <div class="search-wrap"><input id="searchInput" type="search" placeholder="搜尋英文或中文…"></div>
+      <select id="categorySelect" class="category-select"><option value="all">全部主題</option></select>
+      <select id="levelSelect" class="category-select">
+        <option value="all">全部星級</option>
+        <option value="5">★★★★★ 必背</option>
+        <option value="4">★★★★ 常考</option>
+        <option value="3">★★★ 補充</option>
+      </select>
+      <div class="mode-tabs">
+        <button class="mode-button active" data-mode="all">全部</button>
+        <button class="mode-button" data-mode="review">今日複習</button>
+        <button class="mode-button" data-mode="wrong">錯題本</button>
+        <button class="mode-button" data-mode="favorite">收藏</button>
+      </div>
+    </section>
+
+    <section class="word-card">
+      <div class="card-topline">
+        <span id="wordNumber"></span>
+        <span id="categoryBadge" class="category-badge"></span>
+        <button id="favoriteButton" class="icon-button">☆</button>
+      </div>
+      <div id="starLevel" class="star-level"></div>
+      <h2 id="englishWord">Loading...</h2>
+      <p id="phonetic" class="phonetic"></p>
+      <button id="speakButton" class="secondary-button">🔊 播放發音</button>
+      <div id="promptArea" class="prompt-area">先想想這個單字的意思</div>
+      <div id="answerArea" class="answer-area hidden">
+        <span id="partOfSpeech" class="part-badge"></span>
+        <h3 id="meaning"></h3>
+        <div class="example-box">
+          <p id="example"></p>
+          <p id="exampleTranslation" class="translation"></p>
+        </div>
+      </div>
+      <button id="showAnswerButton" class="primary-button">顯示答案</button>
+      <div id="ratingArea" class="rating-grid hidden">
+        <button class="rating-button difficult" data-rating="difficult">1 不會</button>
+        <button class="rating-button normal" data-rating="normal">2 普通</button>
+        <button class="rating-button easy" data-rating="easy">3 熟悉</button>
+      </div>
+      <p id="statusMessage" class="status-message"></p>
+    </section>
+  </section>
+
+  <section id="grammarView" class="hidden">
+    <section class="grammar-toolbar">
+      <select id="grammarCategory"><option value="all">全部文法分類</option></select>
+      <button id="newQuestionButton" class="ghost-button">換一題</button>
+    </section>
+    <section class="grammar-stats">
+      <article class="metric-card"><span>已作答</span><strong id="grammarAnswered">0</strong></article>
+      <article class="metric-card"><span>答對</span><strong id="grammarCorrect">0</strong></article>
+      <article class="metric-card"><span>正確率</span><strong id="grammarAccuracy">0%</strong></article>
+    </section>
+    <section class="grammar-card">
+      <p id="grammarTopic" class="eyebrow"></p>
+      <h2 id="grammarQuestion">Loading...</h2>
+      <div id="grammarOptions" class="option-grid"></div>
+      <div id="grammarFeedback" class="grammar-feedback hidden"></div>
+    </section>
+  </section>
+
+  <section class="data-panel">
+    <h2>資料庫資訊</h2>
+    <p>內建分類單字與文法題庫。學習進度保存在目前瀏覽器中。</p>
+    <button id="exportButton" class="ghost-button">匯出進度</button>
+  </section>
+</main>
+<script src="script.js"></script>
+</body>
+</html>
