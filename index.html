@@ -49,13 +49,36 @@
 
   <section id="learnView" class="view">
     <div class="stats"><article><span>總字數</span><b id="totalWords">0</b></article><article><span>已學</span><b id="learnedWords">0</b></article><article><span>錯題</span><b id="wrongWords">0</b></article><article><span>收藏</span><b id="favWords">0</b></article></div>
-    <div class="filters"><input id="search" placeholder="搜尋英文或中文"><select id="category"><option value="all">全部主題</option></select><select id="studyMode"><option value="all">全部單字</option><option value="wrong">錯題本</option><option value="favorite">收藏</option><option value="review">今日複習</option></select></div>
+    <div class="filters">
+      <select id="wordBank">
+        <option value="toeic">多益單字</option>
+        <option value="junior2000">會考 2000 單</option>
+      </select>
+      <input id="search" placeholder="搜尋英文或中文">
+      <select id="category"><option value="all">全部主題</option></select>
+      <select id="studyMode"><option value="all">全部單字</option><option value="wrong">錯題本</option><option value="favorite">收藏</option><option value="review">今日複習</option></select>
+    </div>
     <article class="flashcard"><div class="cardline"><span id="wordCounter"></span><span id="wordCategory" class="pill"></span><button id="favBtn" class="star">☆</button></div><div id="wordLevel" class="stars"></div><h2 id="wordText">Loading...</h2><p id="phonetic"></p><button id="speakBtn" class="tiny">🔊 發音</button><div id="answer" class="answer hidden"><span id="pos" class="pill"></span><h3 id="meaning"></h3><div class="example"><p id="example"></p><p id="translation"></p></div></div><button id="showBtn" class="primary">顯示答案</button><div id="ratings" class="ratings hidden"><button data-rate="hard">不會</button><button data-rate="ok">普通</button><button data-rate="easy">熟悉</button></div></article>
   </section>
 
   <section id="grammarView" class="view hidden"><div class="toolbar"><select id="grammarCategory"><option value="all">全部文法</option></select><button id="randomGrammar" class="secondary">隨機一題</button></div><article class="question-card"><p id="grammarTopic" class="eyebrow"></p><h2 id="grammarQuestion"></h2><div id="grammarOptions" class="options"></div><div id="grammarExplain" class="explain hidden"></div><button id="nextGrammar" class="primary hidden">下一題 →</button></article></section>
 
-  <section id="matchView" class="view hidden"><div class="game-head"><div><h2>中英文配對</h2><p>60 秒內完成越多組越好；配錯一組倒扣 20 分。</p></div><div class="mini-stats"><b id="gameTime">60</b><b id="gameScore">0 分</b></div></div><button id="startGame" class="primary">開始遊戲</button><div id="matchBoard" class="match-board"></div></section>
+  <section id="matchView" class="view hidden">
+    <div class="game-head">
+      <div><h2>中英文配對</h2><p>60 秒內完成越多組越好；配錯一組倒扣 20 分。</p></div>
+      <div class="mini-stats"><b id="gameTime">60</b><b id="gameScore">0 分</b></div>
+    </div>
+    <div class="game-controls">
+      <label>選擇字庫
+        <select id="matchBank">
+          <option value="toeic">多益單字</option>
+          <option value="junior2000">會考 2000 單</option>
+        </select>
+      </label>
+      <button id="startGame" class="primary">開始遊戲</button>
+    </div>
+    <div id="matchBoard" class="match-board"></div>
+  </section>
 
 
   <section id="battleView" class="view hidden">

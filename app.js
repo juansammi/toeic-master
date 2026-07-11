@@ -9,7 +9,11 @@ const today = () => new Date().toISOString().slice(0,10);
 const shuffle = a => { for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]} return a; };
 
 let firebaseReady=false, app=null, auth=null, db=null, user=null, profile=null, online=false;
-let words=await fetch("words.json").then(r=>r.json()), grammar=await fetch("grammar.json").then(r=>r.json());
+const toeicWords = await fetch("words.json").then(r=>r.json());
+const juniorWords = await fetch("junior_words.json").then(r=>r.json());
+let sharedWords = [];
+let words = [...toeicWords];
+const grammar = await fetch("grammar.json").then(r=>r.json());
 let current=[], index=0, currentGrammar=null, timer=null, selected=[], locked=false, gameScore=0, gameTime=60;
 let activeTeamCode=null, activeBattleCode=null, battleUnsub=null, battleAnsweredRound=-1;
 const state=JSON.parse(localStorage.getItem("toeic-v7-state")||'{"xp":0,"streak":0,"lastDay":"","todayWords":0,"todayGrammar":0,"completed":[],"wrong":[],"favorite":[],"stats":{}}');
@@ -147,9 +151,30 @@ function initApp(){
   if(state.lastDay!==today()){state.lastDay=today();state.todayWords=0;state.todayGrammar=0;saveLocal()}
   setupFilters(); refresh(true); nextGrammar(); updateStats(); updateMission(); renderLocalRank();
 }
-function setupFilters(){
+function getSelectedWordBank(){
+  return $("wordBank")?.value === "junior2000"
+    ? [...juniorWords]
+    : [...toeicWords, ...sharedWords];
+}
+function getSelectedMatchBank(){
+  return $("matchBank")?.value === "junior2000"
+    ? juniorWords
+    : [...toeicWords, ...sharedWords];
+}
+function switchWordBank(){
+  words = getSelectedWordBank();
+  $("search").value = "";
+  $("studyMode").value = "all";
+  setupCategories();
+  refresh(true);
+  updateStats();
+}
+function setupCategories(){
   $("category").innerHTML='<option value="all">全部主題</option>';
   [...new Set(words.map(w=>w.category))].sort().forEach(c=>$("category").add(new Option(c,c)));
+}
+function setupFilters(){
+  setupCategories();
   $("grammarCategory").innerHTML='<option value="all">全部文法</option>';
   [...new Set(grammar.map(g=>g.category))].sort().forEach(c=>$("grammarCategory").add(new Option(c,c)));
 }
@@ -170,7 +195,9 @@ function showWord(){
   const w=current[index]; if(!w){$("wordText").textContent="沒有符合的單字";return}
   $("wordCounter").textContent=`${index+1}/${current.length}`;$("wordCategory").textContent=w.category;$("wordLevel").textContent="★".repeat(w.difficulty||4)+"☆".repeat(5-(w.difficulty||4));
   $("wordText").textContent=w.word;$("phonetic").textContent=w.phonetic||"";$("pos").textContent=w.partOfSpeech||"word";$("meaning").textContent=w.meaning;
-  $("example").textContent=w.example||"尚無例句";$("translation").textContent=w.exampleTranslation||"";$("favBtn").textContent=state.favorite.includes(w.id)?"★":"☆";
+  $("example").textContent=w.example || (w.bank==="junior2000" ? "此會考字庫目前提供單字、詞性與中文。" : "尚無例句");
+  $("translation").textContent=w.exampleTranslation||"";
+  $("favBtn").textContent=state.favorite.includes(w.id)?"★":"☆";
   $("answer").classList.add("hidden");$("ratings").classList.add("hidden");$("showBtn").classList.remove("hidden");
 }
 $("showBtn").onclick=()=>{$("answer").classList.remove("hidden");$("ratings").classList.remove("hidden");$("showBtn").classList.add("hidden")};
@@ -184,7 +211,10 @@ document.querySelectorAll("[data-rate]").forEach(b=>b.onclick=async()=>{
   s.interval=days;const d=new Date();d.setDate(d.getDate()+days);s.due=d.toISOString().slice(0,10);state.stats[w.id]=s;
   if(!state.completed.includes(w.id))state.completed.push(w.id);state.todayWords++;await addXp(r==="easy"?3:r==="ok"?2:1);await saveProgress();updateStats();updateMission();index=(index+1)%current.length;showWord();
 });
-$("search").oninput=()=>refresh(false);$("category").onchange=()=>refresh(true);$("studyMode").onchange=()=>refresh(true);
+$("wordBank").onchange=switchWordBank;
+$("search").oninput=()=>refresh(false);
+$("category").onchange=()=>refresh(true);
+$("studyMode").onchange=()=>refresh(true);
 function updateStats(){$("totalWords").textContent=words.length;$("learnedWords").textContent=state.completed.length;$("wrongWords").textContent=state.wrong.length;$("favWords").textContent=state.favorite.length}
 function updateMission(){const w=Math.min(state.todayWords,30),g=Math.min(state.todayGrammar,10);$("missionWords").textContent=`${w}/30`;$("missionGrammar").textContent=`${g}/10`;$("missionPct").textContent=Math.round((w+g)/40*100)+"%";$("streakText").textContent=`🔥 連續學習 ${state.streak||0} 天`}
 
@@ -205,7 +235,25 @@ function startGame(){
   clearInterval(timer);gameTime=60;gameScore=0;selected=[];locked=false;$("gameTime").textContent=60;$("gameScore").textContent="0 分";buildBoard();
   timer=setInterval(()=>{gameTime--;$("gameTime").textContent=gameTime;if(gameTime<=0){clearInterval(timer);finishGame()}},1000);
 }
-function buildBoard(){const picks=shuffle([...words]).slice(0,6),cards=[];picks.forEach(w=>{cards.push({id:w.id,text:w.word,type:"e"});cards.push({id:w.id,text:w.meaning,type:"z"})});shuffle(cards);$("matchBoard").innerHTML="";cards.forEach(c=>{const b=document.createElement("button");b.className="match-card";b.textContent=c.text;b.dataset.id=c.id;b.dataset.type=c.type;b.onclick=()=>pick(b);$("matchBoard").appendChild(b)})}
+function buildBoard(){
+  const pool = getSelectedMatchBank();
+  const picks=shuffle([...pool]).slice(0,6),cards=[];
+  picks.forEach(w=>{
+    cards.push({id:w.id,text:w.word,type:"e"});
+    cards.push({id:w.id,text:w.meaning,type:"z"});
+  });
+  shuffle(cards);
+  $("matchBoard").innerHTML="";
+  cards.forEach(c=>{
+    const b=document.createElement("button");
+    b.className="match-card";
+    b.textContent=c.text;
+    b.dataset.id=c.id;
+    b.dataset.type=c.type;
+    b.onclick=()=>pick(b);
+    $("matchBoard").appendChild(b);
+  });
+}
 function pick(b){if(locked||b.classList.contains("selected")||b.classList.contains("matched"))return;b.classList.add("selected");selected.push(b);if(selected.length<2)return;locked=true;const[a,c]=selected,ok=a.dataset.id===c.dataset.id&&a.dataset.type!==c.dataset.type;setTimeout(()=>{if(ok){a.classList.add("matched");c.classList.add("matched");gameScore+=100;if([...document.querySelectorAll(".match-card")].every(x=>x.classList.contains("matched")))buildBoard()}else{a.classList.remove("selected");c.classList.remove("selected");gameScore=Math.max(0,gameScore-20)}$("gameScore").textContent=gameScore+" 分";selected=[];locked=false},250)}
 async function finishGame(){await addXp(Math.floor(gameScore/100));const ranks=JSON.parse(localStorage.getItem("toeic-v7-rank")||"[]");ranks.push({name:online?(profile?.displayName||"User"):"離線玩家",score:gameScore,date:Date.now()});ranks.sort((a,b)=>b.score-a.score);localStorage.setItem("toeic-v7-rank",JSON.stringify(ranks.slice(0,20)));if(online)await addDoc(collection(db,"gameScores"),{uid:user.uid,name:profile.displayName,score:gameScore,createdAt:serverTimestamp()});renderLocalRank();alert(`時間到！${gameScore} 分`)}
 $("startGame").onclick=startGame;
@@ -213,7 +261,14 @@ $("startGame").onclick=startGame;
 function renderLocalRank(){const r=JSON.parse(localStorage.getItem("toeic-v7-rank")||"[]");$("rankList").innerHTML="";r.slice(0,10).forEach(x=>{const li=document.createElement("li");li.textContent=`${x.name} — ${x.score} 分`;$("rankList").appendChild(li)})}
 function loadRank(){if(!online)return;onSnapshot(query(collection(db,"users"),orderBy("xp","desc"),limit(10)),s=>{$("rankList").innerHTML="";s.forEach(d=>{const x=d.data(),li=document.createElement("li");li.textContent=`${x.displayName||"User"} — ${x.xp||0} XP`;$("rankList").appendChild(li)})})}
 
-async function loadSharedWords(){if(!online)return;const s=await getDocs(collection(db,"communityWords")),extra=[];s.forEach(d=>extra.push({id:"c_"+d.id,...d.data()}));words=[...words,...extra];renderCommunity(extra)}
+async function loadSharedWords(){
+  if(!online)return;
+  const s=await getDocs(collection(db,"communityWords")),extra=[];
+  s.forEach(d=>extra.push({id:"c_"+d.id,...d.data(),bank:"toeic"}));
+  sharedWords=extra;
+  if($("wordBank")?.value!=="junior2000") words=[...toeicWords,...sharedWords];
+  renderCommunity(extra);
+}
 function renderCommunity(arr){$("communityList").innerHTML="";arr.forEach(x=>{const d=document.createElement("div");d.className="list-row";d.innerHTML=`<div><b>${x.word}</b><p>${x.meaning}</p></div>`;$("communityList").appendChild(d)})}
 $("submitBtn").onclick=async()=>{
   if(!online){$("submitMsg").textContent="投稿需要 Google 登入。";return}
