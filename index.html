@@ -3,26 +3,73 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TOEIC Master v3</title>
+  <title>TOEIC Master v4</title>
+  <meta name="theme-color" content="#6854d9">
+  <link rel="manifest" href="manifest.json">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+
+<div id="onlineLoginOverlay" class="login-overlay">
+  <section class="login-card">
+    <p class="eyebrow">TOEIC MASTER ONLINE</p><h2>登入線上版</h2>
+    <p>登入後可同步排行、共用字庫、隊伍和對戰房間。</p>
+    <button id="googleOnlineLogin" class="primary-button">使用 Google 登入</button>
+    <button id="guestOnlineLogin" class="ghost-button">匿名試用</button>
+    <p id="onlineAuthMessage" class="status-message"></p>
+  </section>
+</div>
+
+
+<div id="loginOverlay" class="login-overlay">
+  <section class="login-card">
+    <p class="eyebrow">WELCOME</p>
+    <h2>先輸入你的暱稱</h2>
+    <p>暱稱只會存在這台裝置，用來記錄你的分數與排名。</p>
+    <input id="nicknameInput" type="text" maxlength="16">
+    <button id="loginButton" class="primary-button">開始學習</button>
+  </section>
+</div>
+
 <main class="app-shell">
   <header class="topbar">
     <div>
       <p class="eyebrow">TOEIC 650 → 750+</p>
-      <h1>TOEIC Master</h1>
+      <h1>TOEIC Master v4</h1>
       <p class="subtitle">分類單字、間隔複習與文法題庫整合版</p>
     </div>
     <div class="top-actions">
+      <button id="installButton" class="ghost-button hidden">安裝 App</button>
       <button id="themeButton" class="ghost-button">深色模式</button>
       <button id="resetButton" class="ghost-button danger-text">重設進度</button>
     </div>
   </header>
 
+
+
+  <section class="profile-bar">
+    <div><span>目前使用者</span><strong id="nicknameDisplay">尚未登入</strong></div>
+    <div><span>總積分</span><strong id="totalScore">0</strong></div>
+    <button id="switchUserButton" class="ghost-button">切換暱稱</button>
+  </section>
+
+  <section class="mission-panel">
+    <div>
+      <p class="eyebrow">TODAY'S MISSION</p>
+      <h2>今日任務</h2>
+      <p id="streakText">🔥 連續學習 0 天</p>
+    </div>
+    <div class="mission-grid">
+      <article><span>單字</span><strong id="missionWords">0/30</strong></article>
+      <article><span>文法</span><strong id="missionGrammar">0/10</strong></article>
+      <article><span>完成度</span><strong id="missionPercent">0%</strong></article>
+    </div>
+  </section>
+
   <nav class="main-nav">
     <button class="nav-button active" data-view="vocab">單字練習</button>
     <button class="nav-button" data-view="grammar">文法題庫</button>
+    <button class="nav-button" data-view="game">配對遊戲</button>
   </nav>
 
   <section id="vocabView">
@@ -102,12 +149,64 @@
     </section>
   </section>
 
-  <section class="data-panel">
+
+  <section id="gameView" class="hidden">
+    <section class="game-header">
+      <div>
+        <p class="eyebrow">MATCHING GAME</p>
+        <h2>中英文配對</h2>
+        <p>在 60 秒內配對越多組越好。</p>
+      </div>
+      <div class="game-stats">
+        <article><span>時間</span><strong id="gameTime">60</strong></article>
+        <article><span>分數</span><strong id="gameScore">0</strong></article>
+        <article><span>最高分</span><strong id="gameBest">0</strong></article>
+      </div>
+    </section>
+    <div class="game-actions">
+      <button id="startGameButton" class="primary-button">開始遊戲</button>
+      <button id="resetGameButton" class="ghost-button">重新開始</button>
+    </div>
+    <div id="matchingBoard" class="matching-board"></div>
+    <section class="leaderboard-card">
+      <h3>本機排行榜</h3>
+      <p>這個排行榜只記錄目前裝置上的暱稱。</p>
+      <ol id="leaderboardList"></ol>
+    </section>
+  </section>
+
+  
+<section class="online-hub">
+  <div class="online-profile">
+    <div><span>線上玩家</span><strong id="onlineName">—</strong></div>
+    <div><span>等級</span><strong id="onlineLevel">Lv.1</strong></div>
+    <div><span>經驗值</span><strong id="onlineXp">0 XP</strong></div>
+    <button id="onlineLogout" class="ghost-button">登出</button>
+  </div>
+  <div class="online-grid">
+    <article class="online-card"><h2>全站排行榜</h2><ol id="onlineLeaderboard"></ol></article>
+    <article class="online-card"><h2>共用單字投稿</h2><input id="sharedWord" placeholder="英文"><input id="sharedMeaning" placeholder="中文"><input id="sharedPos" placeholder="詞性"><textarea id="sharedExample" placeholder="例句"></textarea><button id="submitSharedWord" class="primary-button">送出審核</button><p id="sharedMessage"></p></article>
+    <article class="online-card"><h2>共用單字庫</h2><div id="sharedWordsList"></div></article>
+    <article class="online-card"><h2>組隊學習</h2><input id="onlineTeamName" placeholder="隊伍名稱"><button id="createOnlineTeam" class="primary-button">建立隊伍</button><input id="onlineTeamCode" placeholder="邀請碼"><button id="joinOnlineTeam" class="ghost-button">加入隊伍</button><div id="onlineTeamsList"></div></article>
+    <article class="online-card"><h2>線上對戰房間</h2><button id="createBattleRoom" class="primary-button">建立房間</button><input id="battleRoomInput" placeholder="房號"><button id="joinBattleRoom" class="ghost-button">加入房間</button><div id="onlineBattleLobby" class="hidden"><p>房號：<strong id="battleRoomCodeDisplay"></strong></p><div id="onlineBattlePlayers"></div></div></article>
+    <article id="adminPanel" class="online-card hidden"><h2>管理員後台</h2><div class="admin-counts"><span>使用者 <strong id="adminUserCount">0</strong></span><span>待審核 <strong id="adminPendingCount">0</strong></span><span>共用單字 <strong id="adminWordCount">0</strong></span><span>對戰房 <strong id="adminBattleCount">0</strong></span></div><div id="adminPendingList"></div></article>
+  </div>
+</section>
+
+<section class="data-panel">
     <h2>資料庫資訊</h2>
     <p>內建分類單字與文法題庫。學習進度保存在目前瀏覽器中。</p>
+    <div class="upload-box">
+      <h3>上傳自己的單字</h3>
+      <p>支援 JSON 或 CSV。JSON 欄位至少要有 word、meaning；CSV 第一列請用 word,meaning。</p>
+      <label class="file-button">選擇單字檔<input id="customUploadInput" type="file" accept=".json,.csv,application/json,text/csv"></label>
+      <button id="restoreWordsButton" class="ghost-button">恢復內建單字</button>
+      <p id="uploadMessage" class="status-message"></p>
+    </div>
     <button id="exportButton" class="ghost-button">匯出進度</button>
   </section>
 </main>
 <script src="script.js"></script>
+<script type="module" src="online.js"></script>
 </body>
 </html>
