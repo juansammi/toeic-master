@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#6758dc">
-  <title>TOEIC Master v7</title>
+  <title>TOEIC Master v9</title>
   <link rel="manifest" href="manifest.json">
   <link rel="stylesheet" href="style.css">
 </head>
@@ -12,7 +12,7 @@
 <div id="loginScreen" class="overlay">
   <section class="login-card">
     <div class="logo">TM</div>
-    <p class="eyebrow">TOEIC MASTER v7</p>
+    <p class="eyebrow">TOEIC MASTER v9</p>
     <h1>準備開始了嗎？</h1>
     <p>Google 登入可同步進度；Firebase 尚未設定成功時，也能先用離線模式。</p>
     <button id="googleLogin" class="primary full">使用 Google 登入</button>
@@ -33,7 +33,7 @@
 </div>
 
 <header class="topbar">
-  <div><p class="eyebrow">TOEIC 650 → 750+</p><h1>TOEIC Master v7</h1></div>
+  <div><p class="eyebrow">TOEIC 650 → 750+</p><h1>TOEIC Master v9</h1></div>
   <div class="userbox"><span id="connectionBadge" class="badge offline">離線</span><span id="userName">尚未登入</span><strong id="userXp">0 XP</strong><button id="logoutBtn" class="tiny">登出</button></div>
 </header>
 
@@ -44,7 +44,7 @@
   </section>
 
   <nav class="tabs">
-    <button class="tab active" data-view="learn">單字</button><button class="tab" data-view="grammar">文法</button><button class="tab" data-view="match">配對</button><button class="tab" data-view="rank">排行</button><button class="tab" data-view="community">共用字庫</button><button class="tab" data-view="team">隊伍</button><button id="adminTab" class="tab hidden" data-view="admin">管理後台</button>
+    <button class="tab active" data-view="learn">單字</button><button class="tab" data-view="grammar">文法</button><button class="tab" data-view="match">配對</button><button class="tab" data-view="battle">線上對戰</button><button class="tab" data-view="rank">排行</button><button class="tab" data-view="community">共用字庫</button><button class="tab" data-view="team">隊伍</button><button id="adminTab" class="tab hidden" data-view="admin">管理後台</button>
   </nav>
 
   <section id="learnView" class="view">
@@ -55,13 +55,27 @@
 
   <section id="grammarView" class="view hidden"><div class="toolbar"><select id="grammarCategory"><option value="all">全部文法</option></select><button id="randomGrammar" class="secondary">隨機一題</button></div><article class="question-card"><p id="grammarTopic" class="eyebrow"></p><h2 id="grammarQuestion"></h2><div id="grammarOptions" class="options"></div><div id="grammarExplain" class="explain hidden"></div><button id="nextGrammar" class="primary hidden">下一題 →</button></article></section>
 
-  <section id="matchView" class="view hidden"><div class="game-head"><div><h2>中英文配對</h2><p>60 秒內完成越多組，積分越高。</p></div><div class="mini-stats"><b id="gameTime">60</b><b id="gameScore">0 分</b></div></div><button id="startGame" class="primary">開始遊戲</button><div id="matchBoard" class="match-board"></div></section>
+  <section id="matchView" class="view hidden"><div class="game-head"><div><h2>中英文配對</h2><p>60 秒內完成越多組越好；配錯一組倒扣 20 分。</p></div><div class="mini-stats"><b id="gameTime">60</b><b id="gameScore">0 分</b></div></div><button id="startGame" class="primary">開始遊戲</button><div id="matchBoard" class="match-board"></div></section>
+
+
+  <section id="battleView" class="view hidden">
+    <div class="twocol">
+      <article class="panel"><h2>建立對戰房間</h2><p>建立後把 6 位房號傳給朋友。</p><select id="battleCount"><option value="10">10 題</option><option value="20">20 題</option></select><button id="createBattle" class="primary">建立房間</button></article>
+      <article class="panel"><h2>加入對戰房間</h2><input id="battleCode" maxlength="6" placeholder="輸入房號"><button id="joinBattle" class="primary">加入房間</button></article>
+    </div>
+    <article id="battleLobby" class="panel hidden"><h2>房號：<span id="battleRoomCode"></span></h2><p id="battleLobbyStatus">等待另一位玩家加入…</p><div id="battlePlayerList" class="battle-grid"></div><button id="battleStart" class="primary hidden">開始對戰</button></article>
+    <article id="battleArena" class="question-card hidden"><p id="battleRound" class="eyebrow"></p><h2 id="battleWord"></h2><div id="battleOptions" class="options"></div><div id="battleScoreboard" class="battle-grid"></div><p id="battleMessage"></p></article>
+  </section>
 
   <section id="rankView" class="view hidden"><article class="panel"><h2>排行榜</h2><p id="rankHint">線上模式顯示全站 XP；離線模式顯示本機配對成績。</p><ol id="rankList"></ol></article></section>
 
   <section id="communityView" class="view hidden"><div class="twocol"><article class="panel"><h2>投稿單字</h2><input id="submitWord" placeholder="英文"><input id="submitMeaning" placeholder="中文"><input id="submitPos" placeholder="詞性"><textarea id="submitExample" placeholder="英文例句"></textarea><button id="submitBtn" class="primary">送出審核</button><p id="submitMsg"></p></article><article class="panel"><h2>已通過的共用單字</h2><div id="communityList" class="list"></div></article></div></section>
 
-  <section id="teamView" class="view hidden"><div class="twocol"><article class="panel"><h2>建立隊伍</h2><input id="teamName" placeholder="隊伍名稱"><button id="createTeam" class="primary">建立</button></article><article class="panel"><h2>加入隊伍</h2><input id="teamCode" placeholder="6 位邀請碼"><button id="joinTeam" class="primary">加入</button></article></div><article class="panel"><h2>我的隊伍</h2><div id="teamList" class="list"></div></article></section>
+  <section id="teamView" class="view hidden">
+  <div class="twocol"><article class="panel"><h2>建立隊伍</h2><input id="teamName" placeholder="隊伍名稱"><input id="teamGoal" type="number" min="10" value="300" placeholder="本週共同 XP 目標"><button id="createTeam" class="primary">建立</button></article><article class="panel"><h2>加入隊伍</h2><input id="teamCode" placeholder="6 位邀請碼"><button id="joinTeam" class="primary">加入</button></article></div>
+  <article class="panel"><h2>我的隊伍</h2><div id="teamList" class="list"></div></article>
+  <article id="teamDetail" class="panel hidden"><div class="setup-head"><div><h2 id="teamDetailName"></h2><p id="teamDetailCode"></p></div><button id="refreshTeam" class="tiny">更新</button></div><div class="progress-track"><div id="teamProgressBar" class="progress-bar"></div></div><p id="teamProgressText"></p><h3>隊員貢獻排行</h3><ol id="teamMembers"></ol></article>
+</section>
 
   <section id="adminView" class="view hidden"><div class="stats"><article><span>使用者</span><b id="adminUsers">0</b></article><article><span>待審核</span><b id="adminPending">0</b></article><article><span>共用單字</span><b id="adminShared">0</b></article></div><article class="panel"><h2>待審核投稿</h2><div id="pendingList" class="list"></div></article></section>
 </main>

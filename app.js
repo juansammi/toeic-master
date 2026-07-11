@@ -11,6 +11,7 @@ const shuffle = a => { for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.ran
 let firebaseReady=false, app=null, auth=null, db=null, user=null, profile=null, online=false;
 let words=await fetch("words.json").then(r=>r.json()), grammar=await fetch("grammar.json").then(r=>r.json());
 let current=[], index=0, currentGrammar=null, timer=null, selected=[], locked=false, gameScore=0, gameTime=60;
+let activeTeamCode=null, activeBattleCode=null, battleUnsub=null, battleAnsweredRound=-1;
 const state=JSON.parse(localStorage.getItem("toeic-v7-state")||'{"xp":0,"streak":0,"lastDay":"","todayWords":0,"todayGrammar":0,"completed":[],"wrong":[],"favorite":[],"stats":{}}');
 
 function saveLocal(){ localStorage.setItem("toeic-v7-state",JSON.stringify(state)); }
@@ -139,6 +140,7 @@ async function addXp(n){
     const ref=doc(db,"users",user.uid);
     await runTransaction(db,async tx=>{const s=await tx.get(ref);tx.update(ref,{xp:(s.data()?.xp||0)+n,lastActive:today()})});
     profile.xp=(profile.xp||0)+n; $("userXp").textContent=`${profile.xp} XP`;
+    if(activeTeamCode){updateDoc(doc(db,"teams",activeTeamCode),{[`members.${user.uid}.xp`]:profile.xp}).catch(()=>{});}
   }
 }
 function initApp(){
@@ -204,7 +206,7 @@ function startGame(){
   timer=setInterval(()=>{gameTime--;$("gameTime").textContent=gameTime;if(gameTime<=0){clearInterval(timer);finishGame()}},1000);
 }
 function buildBoard(){const picks=shuffle([...words]).slice(0,6),cards=[];picks.forEach(w=>{cards.push({id:w.id,text:w.word,type:"e"});cards.push({id:w.id,text:w.meaning,type:"z"})});shuffle(cards);$("matchBoard").innerHTML="";cards.forEach(c=>{const b=document.createElement("button");b.className="match-card";b.textContent=c.text;b.dataset.id=c.id;b.dataset.type=c.type;b.onclick=()=>pick(b);$("matchBoard").appendChild(b)})}
-function pick(b){if(locked||b.classList.contains("selected")||b.classList.contains("matched"))return;b.classList.add("selected");selected.push(b);if(selected.length<2)return;locked=true;const[a,c]=selected,ok=a.dataset.id===c.dataset.id&&a.dataset.type!==c.dataset.type;setTimeout(()=>{if(ok){a.classList.add("matched");c.classList.add("matched");gameScore+=100;$("gameScore").textContent=gameScore+" 分";if([...document.querySelectorAll(".match-card")].every(x=>x.classList.contains("matched")))buildBoard()}else{a.classList.remove("selected");c.classList.remove("selected")}selected=[];locked=false},250)}
+function pick(b){if(locked||b.classList.contains("selected")||b.classList.contains("matched"))return;b.classList.add("selected");selected.push(b);if(selected.length<2)return;locked=true;const[a,c]=selected,ok=a.dataset.id===c.dataset.id&&a.dataset.type!==c.dataset.type;setTimeout(()=>{if(ok){a.classList.add("matched");c.classList.add("matched");gameScore+=100;if([...document.querySelectorAll(".match-card")].every(x=>x.classList.contains("matched")))buildBoard()}else{a.classList.remove("selected");c.classList.remove("selected");gameScore=Math.max(0,gameScore-20)}$("gameScore").textContent=gameScore+" 分";selected=[];locked=false},250)}
 async function finishGame(){await addXp(Math.floor(gameScore/100));const ranks=JSON.parse(localStorage.getItem("toeic-v7-rank")||"[]");ranks.push({name:online?(profile?.displayName||"User"):"離線玩家",score:gameScore,date:Date.now()});ranks.sort((a,b)=>b.score-a.score);localStorage.setItem("toeic-v7-rank",JSON.stringify(ranks.slice(0,20)));if(online)await addDoc(collection(db,"gameScores"),{uid:user.uid,name:profile.displayName,score:gameScore,createdAt:serverTimestamp()});renderLocalRank();alert(`時間到！${gameScore} 分`)}
 $("startGame").onclick=startGame;
 
@@ -220,9 +222,70 @@ $("submitBtn").onclick=async()=>{
 };
 
 const code6=()=>Math.random().toString(36).slice(2,8).toUpperCase();
-$("createTeam").onclick=async()=>{if(!online)return alert("建立隊伍需要登入");const name=$("teamName").value.trim();if(!name)return;const code=code6();await setDoc(doc(db,"teams",code),{name,code,owner:user.uid,members:{[user.uid]:{name:profile.displayName,xp:profile.xp||0}},createdAt:serverTimestamp()});alert(`隊伍邀請碼：${code}`);loadTeams()};
-$("joinTeam").onclick=async()=>{if(!online)return alert("加入隊伍需要登入");const code=$("teamCode").value.trim().toUpperCase(),ref=doc(db,"teams",code),s=await getDoc(ref);if(!s.exists())return alert("找不到隊伍");await updateDoc(ref,{[`members.${user.uid}`]:{name:profile.displayName,xp:profile.xp||0}});loadTeams()};
-async function loadTeams(){if(!online)return;const s=await getDocs(collection(db,"teams"));$("teamList").innerHTML="";s.forEach(d=>{const x=d.data();if(!x.members?.[user.uid])return;const row=document.createElement("div");row.className="list-row";row.innerHTML=`<div><b>${x.name}</b><p>邀請碼 ${x.code}｜${Object.keys(x.members).length} 人</p></div>`;$("teamList").appendChild(row)})}
+
+$("createTeam").onclick=async()=>{
+  if(!online)return alert("建立隊伍需要 Google 登入");
+  const name=$("teamName").value.trim(),goal=Math.max(10,Number($("teamGoal").value||300));if(!name)return;
+  const code=code6();
+  await setDoc(doc(db,"teams",code),{name,code,owner:user.uid,weeklyGoal:goal,weekKey:today().slice(0,7),members:{[user.uid]:{name:profile.displayName,xp:profile.xp||0}},createdAt:serverTimestamp()});
+  alert(`隊伍邀請碼：${code}`);loadTeams();
+};
+$("joinTeam").onclick=async()=>{
+  if(!online)return alert("加入隊伍需要 Google 登入");
+  const code=$("teamCode").value.trim().toUpperCase(),ref=doc(db,"teams",code),s=await getDoc(ref);if(!s.exists())return alert("找不到隊伍");
+  await updateDoc(ref,{[`members.${user.uid}`]:{name:profile.displayName,xp:profile.xp||0}});activeTeamCode=code;loadTeams();showTeam(code);
+};
+async function loadTeams(){
+  if(!online){$("teamList").innerHTML='<p>隊伍功能需要 Google 登入。</p>';return}
+  const s=await getDocs(collection(db,"teams"));$("teamList").innerHTML="";
+  s.forEach(d=>{const x=d.data();if(!x.members?.[user.uid])return;const row=document.createElement("div");row.className="list-row team-card";row.innerHTML=`<div><b>${x.name}</b><p>邀請碼 ${x.code}｜${Object.keys(x.members).length} 人｜目標 ${x.weeklyGoal||300} XP</p></div><span>查看 →</span>`;row.onclick=()=>showTeam(x.code);$("teamList").appendChild(row)});
+}
+async function showTeam(code){
+  activeTeamCode=code;const s=await getDoc(doc(db,"teams",code));if(!s.exists())return;const x=s.data();
+  $("teamDetail").classList.remove("hidden");$("teamDetailName").textContent=x.name;$("teamDetailCode").textContent=`邀請碼：${x.code}`;
+  const members=Object.values(x.members||{}).sort((a,b)=>(b.xp||0)-(a.xp||0));const total=members.reduce((n,m)=>n+(m.xp||0),0),goal=x.weeklyGoal||300,pct=Math.min(100,Math.round(total/goal*100));
+  $("teamProgressBar").style.width=pct+"%";$("teamProgressText").textContent=`本週 ${total}/${goal} XP（${pct}%）`;
+  $("teamMembers").innerHTML="";members.forEach(m=>{const li=document.createElement("li");li.textContent=`${m.name} — ${m.xp||0} XP`;$("teamMembers").appendChild(li)});
+}
+$("refreshTeam").onclick=()=>activeTeamCode&&showTeam(activeTeamCode);
+
+// ===== 真正可用的雙人線上對戰（Firestore 即時房間） =====
+$("createBattle").onclick=async()=>{
+  if(!online)return alert("線上對戰需要 Google 登入");
+  const code=code6(),count=Number($("battleCount").value||10),ids=shuffle([...words]).slice(0,count).map(w=>w.id);
+  await setDoc(doc(db,"battleRooms",code),{code,host:user.uid,status:"waiting",round:0,questionIds:ids,players:{[user.uid]:{name:profile.displayName,score:0,answered:-1}},createdAt:serverTimestamp()});
+  listenBattle(code);
+};
+$("joinBattle").onclick=async()=>{
+  if(!online)return alert("線上對戰需要 Google 登入");
+  const code=$("battleCode").value.trim().toUpperCase(),ref=doc(db,"battleRooms",code),s=await getDoc(ref);if(!s.exists())return alert("找不到房間");
+  await updateDoc(ref,{[`players.${user.uid}`]:{name:profile.displayName,score:0,answered:-1}});listenBattle(code);
+};
+function listenBattle(code){
+  activeBattleCode=code;battleAnsweredRound=-1;$("battleLobby").classList.remove("hidden");$("battleRoomCode").textContent=code;
+  if(battleUnsub)battleUnsub();battleUnsub=onSnapshot(doc(db,"battleRooms",code),s=>{if(!s.exists())return;renderBattle(s.data())});
+}
+function renderBattle(room){
+  const players=room.players||{};$("battlePlayerList").innerHTML="";$("battleScoreboard").innerHTML="";
+  Object.values(players).forEach(p=>{const a=document.createElement("div");a.className="battle-player";a.innerHTML=`<span>${p.name}</span><strong>${p.score||0} 分</strong>`;$("battlePlayerList").appendChild(a);$("battleScoreboard").appendChild(a.cloneNode(true))});
+  $("battleLobbyStatus").textContent=Object.keys(players).length<2?"等待另一位玩家加入…":"兩位玩家已就緒。";
+  $("battleStart").classList.toggle("hidden",!(room.host===user.uid&&Object.keys(players).length>=2&&room.status==="waiting"));
+  if(room.status==="playing")showBattleQuestion(room);
+  if(room.status==="finished"){$("battleArena").classList.remove("hidden");$("battleOptions").innerHTML="";const arr=Object.values(players).sort((a,b)=>(b.score||0)-(a.score||0));$("battleMessage").textContent=`對戰結束！${arr[0]?.name||"玩家"} 獲勝。`}
+}
+$("battleStart").onclick=()=>updateDoc(doc(db,"battleRooms",activeBattleCode),{status:"playing",round:0});
+function showBattleQuestion(room){
+  $("battleArena").classList.remove("hidden");const round=room.round||0,id=room.questionIds[round],w=words.find(x=>String(x.id)===String(id));if(!w)return;
+  $("battleRound").textContent=`第 ${round+1}/${room.questionIds.length} 題`;$("battleWord").textContent=w.word;$("battleMessage").textContent=battleAnsweredRound===round?"已作答，等待下一題…":"";
+  $("battleOptions").innerHTML="";const opts=shuffle([w,...shuffle(words.filter(x=>String(x.id)!==String(w.id))).slice(0,3)]);
+  opts.forEach(o=>{const b=document.createElement("button");b.className="option";b.textContent=o.meaning;b.disabled=battleAnsweredRound===round;b.onclick=()=>answerBattle(String(o.id)===String(w.id),room);$("battleOptions").appendChild(b)});
+}
+async function answerBattle(ok,room){
+  const round=room.round||0;if(battleAnsweredRound===round)return;battleAnsweredRound=round;[...$("battleOptions").children].forEach(b=>b.disabled=true);
+  const ref=doc(db,"battleRooms",activeBattleCode);
+  await runTransaction(db,async tx=>{const s=await tx.get(ref),r=s.data(),players=r.players||{},me=players[user.uid]||{name:profile.displayName,score:0,answered:-1};if(me.answered===round)return;me.score=(me.score||0)+(ok?10:0);me.answered=round;players[user.uid]=me;const all=Object.values(players).length>=2&&Object.values(players).every(p=>p.answered===round);let nextRound=r.round,status=r.status;if(all){if(round+1>=r.questionIds.length)status="finished";else nextRound=round+1}tx.update(ref,{players,round:nextRound,status})});
+  if(ok)await addXp(3);$("battleMessage").textContent=ok?"答對！等待對手…":"答錯，等待對手…";
+}
 
 async function loadAdmin(){
   const [u,p,w]=await Promise.all([getDocs(collection(db,"users")),getDocs(query(collection(db,"submissions"),where("status","==","pending"))),getDocs(collection(db,"communityWords"))]);

@@ -22,5 +22,6 @@ service cloud.firestore {
     match /communityWords/{id} { allow read: if signedIn(); allow write: if isAdmin(); }
     match /teams/{id} { allow read, create, update: if signedIn(); allow delete: if isAdmin(); }
     match /gameScores/{id} { allow read, create: if signedIn(); }
+    match /battleRooms/{id} { allow read, create, update: if signedIn(); allow delete: if admin(); }
   }
 }
