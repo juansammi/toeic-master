@@ -38,10 +38,39 @@ $("googleLogin").onclick=async()=>{
   catch(e){ showLoginError(e); if(e?.code==="auth/popup-blocked") await signInWithRedirect(auth,new GoogleAuthProvider()); }
 };
 $("offlineLogin").onclick=()=>enterOffline();
-$("logoutBtn").onclick=async()=>{ if(online&&auth) await signOut(auth); enterOffline(true); };
+$("logoutBtn").onclick=async()=>{
+  const button=$("logoutBtn");
+  button.disabled=true;
+  button.textContent="登出中…";
+  try{
+    if(online&&auth) await signOut(auth);
+    online=false;
+    user=null;
+    profile=null;
+    $("adminTab").classList.add("hidden");
+    $("userName").textContent="尚未登入";
+    $("userXp").textContent="0 XP";
+    $("loginError").textContent="";
+    $("diagnosticText").textContent="已登出，請重新登入或使用離線模式。";
+    $("loginScreen").classList.remove("hidden");
+  }catch(e){
+    showLoginError(e);
+    $("loginScreen").classList.remove("hidden");
+  }finally{
+    button.disabled=false;
+    button.textContent="登出";
+  }
+};
 
 if(auth) onAuthStateChanged(auth,async u=>{
-  if(!u) return;
+  if(!u){
+    online=false;
+    user=null;
+    profile=null;
+    $("adminTab").classList.add("hidden");
+    $("loginScreen").classList.remove("hidden");
+    return;
+  }
   try{ await enterOnline(u); }catch(e){ showLoginError(e); }
 });
 
