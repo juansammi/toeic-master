@@ -3,155 +3,68 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="theme-color" content="#6657d9">
-  <title>TOEIC Master v6</title>
+  <meta name="theme-color" content="#6758dc">
+  <title>TOEIC Master v7</title>
   <link rel="manifest" href="manifest.json">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <div id="loginScreen" class="overlay">
-  <div class="login-card">
+  <section class="login-card">
     <div class="logo">TM</div>
-    <p class="eyebrow">TOEIC MASTER v6</p>
+    <p class="eyebrow">TOEIC MASTER v7</p>
     <h1>準備開始了嗎？</h1>
-    <p>Google 登入可同步進度；Firebase 尚未正常時，也能直接進入離線模式自己玩。</p>
-    <button id="googleLogin" class="primary">使用 Google 登入</button>
-    <button id="offlineLogin" class="secondary">先用離線模式</button>
+    <p>Google 登入可同步進度；Firebase 尚未設定成功時，也能先用離線模式。</p>
+    <button id="googleLogin" class="primary full">使用 Google 登入</button>
+    <button id="offlineLogin" class="secondary full">先用離線模式</button>
+    <button id="openSetup" class="text-button">Firebase 連線設定／診斷</button>
     <div id="loginError" class="error"></div>
-    <details class="diagnostic"><summary>登入診斷</summary><pre id="diagnosticText">尚未測試</pre></details>
-  </div>
+  </section>
+</div>
+
+<div id="setupModal" class="overlay hidden">
+  <section class="setup-card">
+    <div class="setup-head"><div><p class="eyebrow">FIREBASE SETUP</p><h2>連線設定</h2></div><button id="closeSetup" class="icon">×</button></div>
+    <p>這些是 Firebase Web App 的公開設定，不是私鑰。可以直接從 Firebase「專案設定 → 一般 → 你的 Web App」貼上。</p>
+    <textarea id="configInput" spellcheck="false" placeholder='貼上 const firebaseConfig = { ... } 或純 JSON'></textarea>
+    <div class="button-row"><button id="testConfig" class="secondary">測試 API Key</button><button id="saveConfig" class="primary">儲存並重新載入</button></div>
+    <pre id="setupResult" class="diagnostic">尚未測試</pre>
+  </section>
 </div>
 
 <header class="topbar">
-  <div>
-    <p class="eyebrow">TOEIC 650 → 750+</p>
-    <h1>TOEIC Master</h1>
-  </div>
-  <div class="userbox">
-    <span id="userName">離線玩家</span>
-    <strong id="userXp">0 XP</strong>
-    <button id="logoutBtn" class="tiny">登出</button>
-  </div>
+  <div><p class="eyebrow">TOEIC 650 → 750+</p><h1>TOEIC Master v7</h1></div>
+  <div class="userbox"><span id="connectionBadge" class="badge offline">離線</span><span id="userName">尚未登入</span><strong id="userXp">0 XP</strong><button id="logoutBtn" class="tiny">登出</button></div>
 </header>
 
 <main class="shell">
   <section class="hero">
-    <div>
-      <p class="eyebrow">TODAY'S MISSION</p>
-      <h2>今天也前進一點</h2>
-      <p id="streakText">🔥 連續學習 0 天</p>
-    </div>
-    <div class="mission-grid">
-      <article><span>單字</span><b id="missionWords">0/30</b></article>
-      <article><span>文法</span><b id="missionGrammar">0/10</b></article>
-      <article><span>完成度</span><b id="missionPct">0%</b></article>
-    </div>
+    <div><p class="eyebrow">TODAY'S MISSION</p><h2>今天也前進一點</h2><p id="streakText">🔥 連續學習 0 天</p></div>
+    <div class="mission-grid"><article><span>單字</span><b id="missionWords">0/30</b></article><article><span>文法</span><b id="missionGrammar">0/10</b></article><article><span>完成度</span><b id="missionPct">0%</b></article></div>
   </section>
 
   <nav class="tabs">
-    <button class="tab active" data-view="learn">單字</button>
-    <button class="tab" data-view="grammar">文法</button>
-    <button class="tab" data-view="match">配對遊戲</button>
-    <button class="tab" data-view="rank">排行榜</button>
-    <button class="tab" data-view="community">共用字庫</button>
-    <button class="tab" data-view="team">隊伍</button>
-    <button id="adminTab" class="tab hidden" data-view="admin">管理後台</button>
+    <button class="tab active" data-view="learn">單字</button><button class="tab" data-view="grammar">文法</button><button class="tab" data-view="match">配對</button><button class="tab" data-view="rank">排行</button><button class="tab" data-view="community">共用字庫</button><button class="tab" data-view="team">隊伍</button><button id="adminTab" class="tab hidden" data-view="admin">管理後台</button>
   </nav>
 
   <section id="learnView" class="view">
-    <div class="stats">
-      <article><span>總字數</span><b id="totalWords">0</b></article>
-      <article><span>已學</span><b id="learnedWords">0</b></article>
-      <article><span>錯題</span><b id="wrongWords">0</b></article>
-      <article><span>收藏</span><b id="favWords">0</b></article>
-    </div>
-    <div class="filters">
-      <input id="search" placeholder="搜尋英文或中文">
-      <select id="category"><option value="all">全部主題</option></select>
-      <select id="studyMode">
-        <option value="all">全部單字</option>
-        <option value="wrong">錯題本</option>
-        <option value="favorite">收藏</option>
-        <option value="review">今日複習</option>
-      </select>
-    </div>
-    <article class="flashcard">
-      <div class="cardline"><span id="wordCounter"></span><span id="wordCategory" class="pill"></span><button id="favBtn" class="star">☆</button></div>
-      <div id="wordLevel" class="stars"></div>
-      <h2 id="wordText">Loading...</h2>
-      <p id="phonetic"></p>
-      <button id="speakBtn" class="tiny">🔊 發音</button>
-      <div id="answer" class="answer hidden">
-        <span id="pos" class="pill"></span>
-        <h3 id="meaning"></h3>
-        <div class="example"><p id="example"></p><p id="translation"></p></div>
-      </div>
-      <button id="showBtn" class="primary">顯示答案</button>
-      <div id="ratings" class="ratings hidden">
-        <button data-rate="hard">不會</button>
-        <button data-rate="ok">普通</button>
-        <button data-rate="easy">熟悉</button>
-      </div>
-    </article>
+    <div class="stats"><article><span>總字數</span><b id="totalWords">0</b></article><article><span>已學</span><b id="learnedWords">0</b></article><article><span>錯題</span><b id="wrongWords">0</b></article><article><span>收藏</span><b id="favWords">0</b></article></div>
+    <div class="filters"><input id="search" placeholder="搜尋英文或中文"><select id="category"><option value="all">全部主題</option></select><select id="studyMode"><option value="all">全部單字</option><option value="wrong">錯題本</option><option value="favorite">收藏</option><option value="review">今日複習</option></select></div>
+    <article class="flashcard"><div class="cardline"><span id="wordCounter"></span><span id="wordCategory" class="pill"></span><button id="favBtn" class="star">☆</button></div><div id="wordLevel" class="stars"></div><h2 id="wordText">Loading...</h2><p id="phonetic"></p><button id="speakBtn" class="tiny">🔊 發音</button><div id="answer" class="answer hidden"><span id="pos" class="pill"></span><h3 id="meaning"></h3><div class="example"><p id="example"></p><p id="translation"></p></div></div><button id="showBtn" class="primary">顯示答案</button><div id="ratings" class="ratings hidden"><button data-rate="hard">不會</button><button data-rate="ok">普通</button><button data-rate="easy">熟悉</button></div></article>
   </section>
 
-  <section id="grammarView" class="view hidden">
-    <div class="toolbar"><select id="grammarCategory"><option value="all">全部文法</option></select><button id="randomGrammar" class="secondary">隨機一題</button></div>
-    <article class="question-card">
-      <p id="grammarTopic" class="eyebrow"></p>
-      <h2 id="grammarQuestion"></h2>
-      <div id="grammarOptions" class="options"></div>
-      <div id="grammarExplain" class="explain hidden"></div>
-      <button id="nextGrammar" class="primary hidden">下一題 →</button>
-    </article>
-  </section>
+  <section id="grammarView" class="view hidden"><div class="toolbar"><select id="grammarCategory"><option value="all">全部文法</option></select><button id="randomGrammar" class="secondary">隨機一題</button></div><article class="question-card"><p id="grammarTopic" class="eyebrow"></p><h2 id="grammarQuestion"></h2><div id="grammarOptions" class="options"></div><div id="grammarExplain" class="explain hidden"></div><button id="nextGrammar" class="primary hidden">下一題 →</button></article></section>
 
-  <section id="matchView" class="view hidden">
-    <div class="game-head">
-      <div><h2>中英文配對</h2><p>60 秒內完成越多組，積分越高。</p></div>
-      <div class="mini-stats"><b id="gameTime">60</b><b id="gameScore">0 分</b></div>
-    </div>
-    <button id="startGame" class="primary">開始遊戲</button>
-    <div id="matchBoard" class="match-board"></div>
-  </section>
+  <section id="matchView" class="view hidden"><div class="game-head"><div><h2>中英文配對</h2><p>60 秒內完成越多組，積分越高。</p></div><div class="mini-stats"><b id="gameTime">60</b><b id="gameScore">0 分</b></div></div><button id="startGame" class="primary">開始遊戲</button><div id="matchBoard" class="match-board"></div></section>
 
-  <section id="rankView" class="view hidden">
-    <article class="panel"><h2>全站排行榜</h2><p id="rankHint">線上模式會顯示所有使用者；離線模式顯示本機紀錄。</p><ol id="rankList"></ol></article>
-  </section>
+  <section id="rankView" class="view hidden"><article class="panel"><h2>排行榜</h2><p id="rankHint">線上模式顯示全站 XP；離線模式顯示本機配對成績。</p><ol id="rankList"></ol></article></section>
 
-  <section id="communityView" class="view hidden">
-    <div class="twocol">
-      <article class="panel">
-        <h2>投稿單字</h2>
-        <input id="submitWord" placeholder="英文">
-        <input id="submitMeaning" placeholder="中文">
-        <input id="submitPos" placeholder="詞性">
-        <textarea id="submitExample" placeholder="英文例句"></textarea>
-        <button id="submitBtn" class="primary">送出審核</button>
-        <p id="submitMsg"></p>
-      </article>
-      <article class="panel"><h2>已通過的共用單字</h2><div id="communityList" class="list"></div></article>
-    </div>
-  </section>
+  <section id="communityView" class="view hidden"><div class="twocol"><article class="panel"><h2>投稿單字</h2><input id="submitWord" placeholder="英文"><input id="submitMeaning" placeholder="中文"><input id="submitPos" placeholder="詞性"><textarea id="submitExample" placeholder="英文例句"></textarea><button id="submitBtn" class="primary">送出審核</button><p id="submitMsg"></p></article><article class="panel"><h2>已通過的共用單字</h2><div id="communityList" class="list"></div></article></div></section>
 
-  <section id="teamView" class="view hidden">
-    <div class="twocol">
-      <article class="panel"><h2>建立隊伍</h2><input id="teamName" placeholder="隊伍名稱"><button id="createTeam" class="primary">建立</button></article>
-      <article class="panel"><h2>加入隊伍</h2><input id="teamCode" placeholder="6 位邀請碼"><button id="joinTeam" class="primary">加入</button></article>
-    </div>
-    <article class="panel"><h2>我的隊伍</h2><div id="teamList" class="list"></div></article>
-  </section>
+  <section id="teamView" class="view hidden"><div class="twocol"><article class="panel"><h2>建立隊伍</h2><input id="teamName" placeholder="隊伍名稱"><button id="createTeam" class="primary">建立</button></article><article class="panel"><h2>加入隊伍</h2><input id="teamCode" placeholder="6 位邀請碼"><button id="joinTeam" class="primary">加入</button></article></div><article class="panel"><h2>我的隊伍</h2><div id="teamList" class="list"></div></article></section>
 
-  <section id="adminView" class="view hidden">
-    <div class="stats">
-      <article><span>使用者</span><b id="adminUsers">0</b></article>
-      <article><span>待審核</span><b id="adminPending">0</b></article>
-      <article><span>共用單字</span><b id="adminShared">0</b></article>
-    </div>
-    <article class="panel"><h2>待審核投稿</h2><div id="pendingList" class="list"></div></article>
-  </section>
+  <section id="adminView" class="view hidden"><div class="stats"><article><span>使用者</span><b id="adminUsers">0</b></article><article><span>待審核</span><b id="adminPending">0</b></article><article><span>共用單字</span><b id="adminShared">0</b></article></div><article class="panel"><h2>待審核投稿</h2><div id="pendingList" class="list"></div></article></section>
 </main>
-
 <script type="module" src="app.js"></script>
 </body>
 </html>

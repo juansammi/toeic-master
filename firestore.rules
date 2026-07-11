@@ -2,12 +2,25 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     function signedIn() { return request.auth != null; }
-    function admin() { return signedIn() && (request.auth.token.email == "s111001@hcvs.hc.edu.tw" || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "admin"); }
-    match /users/{uid} { allow read: if signedIn(); allow create: if signedIn() && request.auth.uid == uid; allow update: if signedIn() && (request.auth.uid == uid || admin()); }
-    match /progress/{uid} { allow read, write: if signedIn() && (request.auth.uid == uid || admin()); }
-    match /submissions/{id} { allow create: if signedIn(); allow read, update: if admin(); }
-    match /communityWords/{id} { allow read: if signedIn(); allow write: if admin(); }
-    match /teams/{id} { allow read, create, update: if signedIn(); allow delete: if admin(); }
+    function isAdmin() {
+      return signedIn() && (
+        request.auth.token.email == "s111001@hcvs.hc.edu.tw" ||
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "admin"
+      );
+    }
+    match /users/{uid} {
+      allow read: if signedIn();
+      allow create: if signedIn() && request.auth.uid == uid;
+      allow update: if signedIn() && (request.auth.uid == uid || isAdmin());
+    }
+    match /progress/{uid} { allow read, write: if signedIn() && (request.auth.uid == uid || isAdmin()); }
+    match /submissions/{id} {
+      allow create: if signedIn() && request.resource.data.submittedBy == request.auth.uid;
+      allow read: if isAdmin() || (signedIn() && resource.data.submittedBy == request.auth.uid);
+      allow update: if isAdmin();
+    }
+    match /communityWords/{id} { allow read: if signedIn(); allow write: if isAdmin(); }
+    match /teams/{id} { allow read, create, update: if signedIn(); allow delete: if isAdmin(); }
     match /gameScores/{id} { allow read, create: if signedIn(); }
   }
 }

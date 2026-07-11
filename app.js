@@ -1,9 +1,9 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, onAuthStateChanged, signOut, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
 import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, addDoc, getDocs, query, where, orderBy, limit, onSnapshot, serverTimestamp, runTransaction } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+import { getFirebaseConfig, ADMIN_EMAIL, DEFAULT_FIREBASE_CONFIG } from "./firebase-config.js";
 
-const CONFIG = {"apiKey": "AIzaSyDzh4etp331ytRyd3_2HQrl3pGTzKeUJ38", "authDomain": "toeic-master-8e0f1.firebaseapp.com", "projectId": "toeic-master-8e0f1", "storageBucket": "toeic-master-8e0f1.firebasestorage.app", "messagingSenderId": "2478267193", "appId": "1:2478267193:web:2d0ef78dcc6b683a7826e8"};
-const ADMIN_EMAIL = "s111001@hcvs.hc.edu.tw";
+const CONFIG = getFirebaseConfig();
 const $ = id => document.getElementById(id);
 const today = () => new Date().toISOString().slice(0,10);
 const shuffle = a => { for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]} return a; };
@@ -11,20 +11,53 @@ const shuffle = a => { for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.ran
 let firebaseReady=false, app=null, auth=null, db=null, user=null, profile=null, online=false;
 let words=await fetch("words.json").then(r=>r.json()), grammar=await fetch("grammar.json").then(r=>r.json());
 let current=[], index=0, currentGrammar=null, timer=null, selected=[], locked=false, gameScore=0, gameTime=60;
-const state=JSON.parse(localStorage.getItem("toeic-v6-state")||'{"xp":0,"streak":0,"lastDay":"","todayWords":0,"todayGrammar":0,"completed":[],"wrong":[],"favorite":[],"stats":{}}');
+const state=JSON.parse(localStorage.getItem("toeic-v7-state")||'{"xp":0,"streak":0,"lastDay":"","todayWords":0,"todayGrammar":0,"completed":[],"wrong":[],"favorite":[],"stats":{}}');
 
-function saveLocal(){ localStorage.setItem("toeic-v6-state",JSON.stringify(state)); }
+function saveLocal(){ localStorage.setItem("toeic-v7-state",JSON.stringify(state)); }
 function isAdmin(){ return online && (user?.email===ADMIN_EMAIL || profile?.role==="admin"); }
 function level(xp){ return Math.floor(Math.sqrt((xp||0)/80))+1; }
 function errorText(e){
   const c=e?.code||"";
-  if(c==="auth/api-key-not-valid") return "Firebase API Key 無效。請到 Firebase 專案設定重新複製 Web App 的 firebaseConfig。";
+  if(c==="auth/api-key-not-valid") return "Firebase API Key 無效。請點「Firebase 連線設定／診斷」，貼上 Firebase Console 最新的 firebaseConfig 後測試。";
   if(c==="auth/unauthorized-domain") return "目前網址未加入 Firebase 已授權網域。";
   if(c==="auth/popup-blocked") return "瀏覽器封鎖登入視窗，請允許彈出視窗。";
   if(c==="auth/operation-not-allowed") return "Firebase 尚未啟用 Google 登入。";
   return `${c||"錯誤"}：${e?.message||e}`;
 }
-function showLoginError(e){ $("loginError").textContent=errorText(e); $("diagnosticText").textContent=JSON.stringify({code:e?.code,message:e?.message,projectId:CONFIG.projectId,authDomain:CONFIG.authDomain},null,2); }
+function showLoginError(e){
+  $("loginError").textContent=errorText(e);
+  $("setupResult").textContent=JSON.stringify({code:e?.code||"",message:e?.message||String(e),projectId:CONFIG.projectId,authDomain:CONFIG.authDomain},null,2);
+}
+
+
+function configAsText(config){ return JSON.stringify(config,null,2); }
+function parseConfigText(text){
+  const cleaned=text.trim().replace(/^export\s+const\s+firebaseConfig\s*=\s*/,'').replace(/^const\s+firebaseConfig\s*=\s*/,'').replace(/;\s*$/,'');
+  try{return JSON.parse(cleaned)}catch{}
+  const keys=["apiKey","authDomain","projectId","storageBucket","messagingSenderId","appId","measurementId"];
+  const out={};
+  for(const key of keys){const m=cleaned.match(new RegExp(key+'\\s*:\\s*["\\\']([^"\\\']+)["\\\']'));if(m)out[key]=m[1]}
+  if(!out.apiKey||!out.projectId)throw new Error("無法解析設定，請貼上完整 firebaseConfig。");
+  return out;
+}
+async function testApiKey(config){
+  const url=`https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${encodeURIComponent(config.apiKey||"")}`;
+  const response=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({returnSecureToken:true})});
+  const data=await response.json().catch(()=>({}));
+  const message=data?.error?.message||"";
+  if(message==="MISSING_EMAIL"||message==="INVALID_EMAIL")return {ok:true,message:"API Key 有效，Firebase Authentication API 可連線。"};
+  if(response.ok)return {ok:true,message:"API Key 有效。"};
+  return {ok:false,message:message||`HTTP ${response.status}`,details:data};
+}
+$("openSetup").onclick=()=>{$("configInput").value=configAsText(CONFIG);$("setupModal").classList.remove("hidden")};
+$("closeSetup").onclick=()=>$("setupModal").classList.add("hidden");
+$("testConfig").onclick=async()=>{
+  $("setupResult").textContent="測試中…";
+  try{const cfg=parseConfigText($("configInput").value);const result=await testApiKey(cfg);$("setupResult").textContent=JSON.stringify(result,null,2)}catch(e){$("setupResult").textContent=e.message}
+};
+$("saveConfig").onclick=()=>{
+  try{const cfg=parseConfigText($("configInput").value);localStorage.setItem("toeicFirebaseConfig",JSON.stringify(cfg));location.reload()}catch(e){$("setupResult").textContent=e.message}
+};
 
 try{
   app=initializeApp(CONFIG); auth=getAuth(app); db=getFirestore(app); firebaseReady=true;
@@ -49,9 +82,10 @@ $("logoutBtn").onclick=async()=>{
     profile=null;
     $("adminTab").classList.add("hidden");
     $("userName").textContent="尚未登入";
+    $("connectionBadge").textContent="離線"; $("connectionBadge").className="badge offline";
     $("userXp").textContent="0 XP";
     $("loginError").textContent="";
-    $("diagnosticText").textContent="已登出，請重新登入或使用離線模式。";
+    $("setupResult").textContent="已登出，請重新登入或使用離線模式。";
     $("loginScreen").classList.remove("hidden");
   }catch(e){
     showLoginError(e);
@@ -81,14 +115,14 @@ async function enterOnline(u){
     profile={displayName:u.displayName||"User",email:u.email||"",xp:0,role:u.email===ADMIN_EMAIL?"admin":"user",createdAt:serverTimestamp(),lastActive:today()};
     await setDoc(ref,profile);
   }else{ profile=snap.data(); await updateDoc(ref,{lastActive:today(),displayName:u.displayName||profile.displayName}); }
-  $("loginScreen").classList.add("hidden"); $("userName").textContent=profile.displayName||u.displayName||"User";
+  $("loginScreen").classList.add("hidden"); $("connectionBadge").textContent="線上"; $("connectionBadge").className="badge online"; $("userName").textContent=profile.displayName||u.displayName||"User";
   $("userXp").textContent=`${profile.xp||0} XP`; if(isAdmin())$("adminTab").classList.remove("hidden");
   await loadCloudProgress(); await loadSharedWords(); loadRank(); loadTeams(); if(isAdmin())loadAdmin();
   initApp();
 }
 function enterOffline(force=false){
   online=false; user=null; profile={displayName:"離線玩家",xp:state.xp||0,role:"user"};
-  $("loginScreen").classList.add("hidden"); $("userName").textContent="離線玩家"; $("userXp").textContent=`${state.xp||0} XP`;
+  $("loginScreen").classList.add("hidden"); $("connectionBadge").textContent="離線"; $("connectionBadge").className="badge offline"; $("userName").textContent="離線玩家"; $("userXp").textContent=`${state.xp||0} XP`;
   initApp();
 }
 async function loadCloudProgress(){
@@ -171,10 +205,10 @@ function startGame(){
 }
 function buildBoard(){const picks=shuffle([...words]).slice(0,6),cards=[];picks.forEach(w=>{cards.push({id:w.id,text:w.word,type:"e"});cards.push({id:w.id,text:w.meaning,type:"z"})});shuffle(cards);$("matchBoard").innerHTML="";cards.forEach(c=>{const b=document.createElement("button");b.className="match-card";b.textContent=c.text;b.dataset.id=c.id;b.dataset.type=c.type;b.onclick=()=>pick(b);$("matchBoard").appendChild(b)})}
 function pick(b){if(locked||b.classList.contains("selected")||b.classList.contains("matched"))return;b.classList.add("selected");selected.push(b);if(selected.length<2)return;locked=true;const[a,c]=selected,ok=a.dataset.id===c.dataset.id&&a.dataset.type!==c.dataset.type;setTimeout(()=>{if(ok){a.classList.add("matched");c.classList.add("matched");gameScore+=100;$("gameScore").textContent=gameScore+" 分";if([...document.querySelectorAll(".match-card")].every(x=>x.classList.contains("matched")))buildBoard()}else{a.classList.remove("selected");c.classList.remove("selected")}selected=[];locked=false},250)}
-async function finishGame(){await addXp(Math.floor(gameScore/100));const ranks=JSON.parse(localStorage.getItem("toeic-v6-rank")||"[]");ranks.push({name:online?(profile?.displayName||"User"):"離線玩家",score:gameScore,date:Date.now()});ranks.sort((a,b)=>b.score-a.score);localStorage.setItem("toeic-v6-rank",JSON.stringify(ranks.slice(0,20)));if(online)await addDoc(collection(db,"gameScores"),{uid:user.uid,name:profile.displayName,score:gameScore,createdAt:serverTimestamp()});renderLocalRank();alert(`時間到！${gameScore} 分`)}
+async function finishGame(){await addXp(Math.floor(gameScore/100));const ranks=JSON.parse(localStorage.getItem("toeic-v7-rank")||"[]");ranks.push({name:online?(profile?.displayName||"User"):"離線玩家",score:gameScore,date:Date.now()});ranks.sort((a,b)=>b.score-a.score);localStorage.setItem("toeic-v7-rank",JSON.stringify(ranks.slice(0,20)));if(online)await addDoc(collection(db,"gameScores"),{uid:user.uid,name:profile.displayName,score:gameScore,createdAt:serverTimestamp()});renderLocalRank();alert(`時間到！${gameScore} 分`)}
 $("startGame").onclick=startGame;
 
-function renderLocalRank(){const r=JSON.parse(localStorage.getItem("toeic-v6-rank")||"[]");$("rankList").innerHTML="";r.slice(0,10).forEach(x=>{const li=document.createElement("li");li.textContent=`${x.name} — ${x.score} 分`;$("rankList").appendChild(li)})}
+function renderLocalRank(){const r=JSON.parse(localStorage.getItem("toeic-v7-rank")||"[]");$("rankList").innerHTML="";r.slice(0,10).forEach(x=>{const li=document.createElement("li");li.textContent=`${x.name} — ${x.score} 分`;$("rankList").appendChild(li)})}
 function loadRank(){if(!online)return;onSnapshot(query(collection(db,"users"),orderBy("xp","desc"),limit(10)),s=>{$("rankList").innerHTML="";s.forEach(d=>{const x=d.data(),li=document.createElement("li");li.textContent=`${x.displayName||"User"} — ${x.xp||0} XP`;$("rankList").appendChild(li)})})}
 
 async function loadSharedWords(){if(!online)return;const s=await getDocs(collection(db,"communityWords")),extra=[];s.forEach(d=>extra.push({id:"c_"+d.id,...d.data()}));words=[...words,...extra];renderCommunity(extra)}

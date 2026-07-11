@@ -1,8 +1,1 @@
-{
-  "name": "TOEIC Master v6",
-  "short_name": "TOEIC Master",
-  "start_url": "./",
-  "display": "standalone",
-  "background_color": "#f5f6fb",
-  "theme_color": "#6657d9"
-}
+{"name":"TOEIC Master v7","short_name":"TOEIC Master","start_url":"./","display":"standalone","background_color":"#f5f6fb","theme_color":"#6758dc"}
