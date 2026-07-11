@@ -1,19 +1,25 @@
-# TOEIC Master v5.1 Online — 登入修正版
+# TOEIC Master v6.0
 
-## 本次修正
-- 移除會蓋住 Firebase 登入畫面的舊版「暱稱登入」視窗。
-- Google 登入失敗時直接顯示 Firebase 錯誤原因。
-- Popup 被封鎖時改用 Redirect 登入。
-- 登入成功但 Firestore 規則錯誤時，會清楚顯示錯誤。
-- 更新 Service Worker，避免 GitHub Pages 一直讀到舊版快取。
+## 內容
+- 內建單字：559 筆
+- 文法題：83 題
+- 單字來源：原有字庫＋你上傳的 TOEIC 分類單字 PDF，已去重整理。
 
-## 更新方式
-1. 解壓縮。
-2. 將資料夾內所有檔案上傳 GitHub，覆蓋舊檔。
-3. 等 Pages 部署完成後，以 Ctrl+F5 強制重新整理。
-4. 若仍顯示舊畫面，清除該網站的瀏覽資料後重開。
+## 這版最重要的改變
+- 全部舊登入程式已移除，只保留單一 `app.js`
+- Google 登入失敗時可以直接進入「離線模式」，所以你一定能自己玩
+- 登入錯誤會直接顯示診斷資訊
+- 文法答完顯示詳解及下一題
+- 配對遊戲、排行榜、投稿、隊伍與管理員審核
+- PWA 手機安裝與離線快取
 
-## Firebase 必要設定
-- Authentication > 登入方式：Google 與匿名已啟用。
-- Authentication > 設定 > 已授權的網域：加入 `juansammi.github.io`。
-- Firestore Rules：貼上 `firestore.rules` 並發布。
+## GitHub 更新
+解壓縮後，把資料夾裡所有檔案上傳並覆蓋舊檔。舊的 `script.js`、`online.js`、`firebase-config.js` 不要保留。
+
+## Firebase 必做
+1. Authentication → 已授權網域加入 `juansammi.github.io`
+2. Firestore → 規則：貼上 `firestore.rules` 全文並發布
+3. 若 Google 登入仍顯示 `auth/api-key-not-valid`，這是 Firebase 專案的 Web API Key 本身失效，請在 Firebase「專案設定 → 一般 → 你的 Web App」重新複製 config，替換 `app.js` 最上方的 CONFIG。
+
+## 管理員
+目前管理員信箱：`s111001@hcvs.hc.edu.tw`

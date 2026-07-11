@@ -1,9 +1,8 @@
 {
-  "name": "TOEIC Master",
-  "short_name": "TOEIC",
+  "name": "TOEIC Master v6",
+  "short_name": "TOEIC Master",
   "start_url": "./",
   "display": "standalone",
-  "background_color": "#f5f7fb",
-  "theme_color": "#6854d9",
-  "description": "TOEIC vocabulary and grammar learning app"
+  "background_color": "#f5f6fb",
+  "theme_color": "#6657d9"
 }

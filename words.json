@@ -6026,5 +6026,126 @@
     "exampleTranslation": "請確認你的聯絡資訊。",
     "category": "Office & Administration",
     "difficulty": 5
+  },
+  {
+    "id": 549,
+    "word": "CHAPTER 1",
+    "phonetic": "",
+    "partOfSpeech": "",
+    "meaning": "職業人員 ................................................................................................................ 3",
+    "example": "",
+    "exampleTranslation": "",
+    "category": "Core TOEIC",
+    "difficulty": 4
+  },
+  {
+    "id": 550,
+    "word": "CHAPTER 2",
+    "phonetic": "",
+    "partOfSpeech": "",
+    "meaning": "文具物品 ................................................................................................................ 4",
+    "example": "",
+    "exampleTranslation": "",
+    "category": "Core TOEIC",
+    "difficulty": 4
+  },
+  {
+    "id": 551,
+    "word": "CHAPTER 3",
+    "phonetic": "",
+    "partOfSpeech": "",
+    "meaning": "錢財費用 ................................................................................................................ 4",
+    "example": "",
+    "exampleTranslation": "",
+    "category": "Core TOEIC",
+    "difficulty": 4
+  },
+  {
+    "id": 552,
+    "word": "CHAPTER 4",
+    "phonetic": "",
+    "partOfSpeech": "",
+    "meaning": "公司會議 ................................................................................................................ 5",
+    "example": "",
+    "exampleTranslation": "",
+    "category": "Core TOEIC",
+    "difficulty": 4
+  },
+  {
+    "id": 553,
+    "word": "CHAPTER 5",
+    "phonetic": "",
+    "partOfSpeech": "",
+    "meaning": "地點所在 ................................................................................................................ 5",
+    "example": "",
+    "exampleTranslation": "",
+    "category": "Core TOEIC",
+    "difficulty": 4
+  },
+  {
+    "id": 554,
+    "word": "CHAPTER 6",
+    "phonetic": "",
+    "partOfSpeech": "",
+    "meaning": "重要片語 ................................................................................................................ 6",
+    "example": "",
+    "exampleTranslation": "",
+    "category": "Core TOEIC",
+    "difficulty": 4
+  },
+  {
+    "id": 555,
+    "word": "CHAPTER 7",
+    "phonetic": "",
+    "partOfSpeech": "",
+    "meaning": "必會名詞 ................................................................................................................ 7",
+    "example": "",
+    "exampleTranslation": "",
+    "category": "Core TOEIC",
+    "difficulty": 4
+  },
+  {
+    "id": 556,
+    "word": "CHAPTER 8",
+    "phonetic": "",
+    "partOfSpeech": "",
+    "meaning": "必會形容詞............................................................................................................. 9",
+    "example": "",
+    "exampleTranslation": "",
+    "category": "Core TOEIC",
+    "difficulty": 4
+  },
+  {
+    "id": 557,
+    "word": "CHAPTER 9",
+    "phonetic": "",
+    "partOfSpeech": "",
+    "meaning": "必會動詞 .............................................................................................................. 11",
+    "example": "",
+    "exampleTranslation": "",
+    "category": "Core TOEIC",
+    "difficulty": 4
+  },
+  {
+    "id": 558,
+    "word": "Chris",
+    "phonetic": "",
+    "partOfSpeech": "",
+    "meaning": "從認真學英文，到現在抄了至少十本單字佳句，至少累積了一萬多個，而至今還在累積當中，記下來的",
+    "example": "",
+    "exampleTranslation": "",
+    "category": "Core TOEIC",
+    "difficulty": 4
+  },
+  {
+    "id": 559,
+    "word": "be married to",
+    "phonetic": "",
+    "partOfSpeech": "",
+    "meaning": "人",
+    "example": "",
+    "exampleTranslation": "",
+    "category": "Business Phrases",
+    "difficulty": 5
   }
 ]
