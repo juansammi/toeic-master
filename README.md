@@ -1,23 +1,19 @@
-# TOEIC Master v5 Online
+# TOEIC Master v5.1 Online — 登入修正版
 
-## 已加入
-- Google／匿名登入
-- Firestore 使用者資料與 XP 排行榜
-- 共用單字投稿與管理員審核
-- 共用單字庫
-- 建立／加入學習隊伍
-- 建立／加入線上對戰房間（MVP 房間同步）
-- 管理員後台統計
-- 保留 v4.1 單字、文法、配對遊戲、收藏與錯題功能
+## 本次修正
+- 移除會蓋住 Firebase 登入畫面的舊版「暱稱登入」視窗。
+- Google 登入失敗時直接顯示 Firebase 錯誤原因。
+- Popup 被封鎖時改用 Redirect 登入。
+- 登入成功但 Firestore 規則錯誤時，會清楚顯示錯誤。
+- 更新 Service Worker，避免 GitHub Pages 一直讀到舊版快取。
 
-## 上線前必做
-1. Firebase Console → Authentication → 設定 → 已授權網域，新增 `juansammi.github.io`。
-2. Firebase Console → Firestore → 規則，把 `firestore.rules` 全部貼上並「發布」。
-3. 若管理員不是 `s111001@hcvs.hc.edu.tw`，同時修改：
-   - `firebase-config.js` 的 `ADMIN_EMAIL`
-   - `firestore.rules` 裡的管理員信箱
-4. 解壓縮後，把所有檔案覆蓋上傳至 GitHub；不要只傳 ZIP。
+## 更新方式
+1. 解壓縮。
+2. 將資料夾內所有檔案上傳 GitHub，覆蓋舊檔。
+3. 等 Pages 部署完成後，以 Ctrl+F5 強制重新整理。
+4. 若仍顯示舊畫面，清除該網站的瀏覽資料後重開。
 
-## 說明
-- 目前對戰已完成房間與玩家即時同步，正式逐題競速可在下一版加上伺服端防作弊與題目狀態機。
-- Firebase 前端 config 可以公開；不要上傳 Service Account 私鑰。
+## Firebase 必要設定
+- Authentication > 登入方式：Google 與匿名已啟用。
+- Authentication > 設定 > 已授權的網域：加入 `juansammi.github.io`。
+- Firestore Rules：貼上 `firestore.rules` 並發布。

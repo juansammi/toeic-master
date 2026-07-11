@@ -1,6 +1,6 @@
 import { firebaseConfig, ADMIN_EMAIL } from './firebase-config.js';
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js';
-import { getAuth, GoogleAuthProvider, signInWithPopup, signInAnonymously, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js';
+import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signInAnonymously, onAuthStateChanged, signOut, browserLocalPersistence, setPersistence } from 'https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js';
 import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, addDoc, getDocs, query, where, orderBy, limit, onSnapshot, serverTimestamp, runTransaction } from 'https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js';
 
 const app = initializeApp(firebaseConfig);
@@ -40,12 +40,45 @@ async function addXp(points){
 }
 window.toeicAddXp=addXp;
 
-$('googleOnlineLogin').onclick=()=>signInWithPopup(auth,provider).catch(e=>$('onlineAuthMessage').textContent=e.message);
-$('guestOnlineLogin').onclick=()=>signInAnonymously(auth).catch(e=>$('onlineAuthMessage').textContent=e.message);
+function friendlyAuthError(error){
+  const code=error?.code||'';
+  if(code==='auth/unauthorized-domain') return '目前網址尚未加入 Firebase「已授權的網域」。請加入 juansammi.github.io。';
+  if(code==='auth/popup-blocked') return '瀏覽器封鎖了登入視窗，系統將改用跳轉登入。';
+  if(code==='auth/popup-closed-by-user') return '登入視窗被關閉，請再按一次登入。';
+  if(code==='auth/operation-not-allowed') return 'Firebase 尚未啟用 Google 登入。';
+  if(code==='auth/network-request-failed') return '網路連線失敗，請確認網路後再試。';
+  return `${code||'登入失敗'}：${error?.message||'未知錯誤'}`;
+}
+async function googleLogin(){
+  const msg=$('onlineAuthMessage');
+  msg.textContent='正在開啟 Google 登入…';
+  try{
+    await setPersistence(auth,browserLocalPersistence);
+    await signInWithPopup(auth,provider);
+  }catch(error){
+    msg.textContent=friendlyAuthError(error);
+    if(error?.code==='auth/popup-blocked') await signInWithRedirect(auth,provider);
+  }
+}
+$('googleOnlineLogin').onclick=googleLogin;
+$('guestOnlineLogin').onclick=async()=>{
+  try{await setPersistence(auth,browserLocalPersistence);await signInAnonymously(auth)}
+  catch(e){$('onlineAuthMessage').textContent=friendlyAuthError(e)}
+};
 $('onlineLogout').onclick=()=>signOut(auth);
+getRedirectResult(auth).catch(e=>$('onlineAuthMessage').textContent=friendlyAuthError(e));
 onAuthStateChanged(auth,async u=>{
   if(!u){ user=null; show('onlineLoginOverlay',true); return; }
-  user=u; show('onlineLoginOverlay',false); await ensureUser(u);
+  user=u;
+  $('onlineAuthMessage').textContent='登入成功，正在載入雲端資料…';
+  try{
+    await ensureUser(u);
+    show('onlineLoginOverlay',false);
+  }catch(error){
+    console.error(error);
+    show('onlineLoginOverlay',true);
+    $('onlineAuthMessage').textContent=`已登入 Google，但 Firestore 連線失敗：${error.code||''} ${error.message||error}`;
+  }
 });
 
 function loadLeaderboard(){

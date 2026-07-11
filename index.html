@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TOEIC Master v4</title>
+  <title>TOEIC Master v5.1 Online</title>
   <meta name="theme-color" content="#6854d9">
   <link rel="manifest" href="manifest.json">
   <link rel="stylesheet" href="style.css">
@@ -21,33 +21,23 @@
 </div>
 
 
-<div id="loginOverlay" class="login-overlay">
-  <section class="login-card">
-    <p class="eyebrow">WELCOME</p>
-    <h2>先輸入你的暱稱</h2>
-    <p>暱稱只會存在這台裝置，用來記錄你的分數與排名。</p>
-    <input id="nicknameInput" type="text" maxlength="16">
-    <button id="loginButton" class="primary-button">開始學習</button>
-  </section>
-</div>
-
 <main class="app-shell">
   <header class="topbar">
     <div>
       <p class="eyebrow">TOEIC 650 → 750+</p>
-      <h1>TOEIC Master v4</h1>
+      <h1>TOEIC Master v5.1 Online</h1>
       <p class="subtitle">分類單字、間隔複習與文法題庫整合版</p>
     </div>
     <div class="top-actions">
       <button id="installButton" class="ghost-button hidden">安裝 App</button>
       <button id="themeButton" class="ghost-button">深色模式</button>
-      <button id="resetButton" class="ghost-button danger-text">重設進度</button>
+      <button id="resetButton" class="ghost-button danger-text">重設本機進度</button>
     </div>
   </header>
 
 
 
-  <section class="profile-bar">
+  <section class="profile-bar legacy-profile hidden">
     <div><span>目前使用者</span><strong id="nicknameDisplay">尚未登入</strong></div>
     <div><span>總積分</span><strong id="totalScore">0</strong></div>
     <button id="switchUserButton" class="ghost-button">切換暱稱</button>

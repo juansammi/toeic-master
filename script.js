@@ -128,10 +128,10 @@ function initProfile(){
   const profile=load(PROFILE_KEY,{nickname:"",score:0});
   currentNickname=profile.nickname||"";
   if(currentNickname){
-    $("loginOverlay").classList.add("hidden");
+    $("loginOverlay")?.classList.add("hidden");
     updateProfileBar();
   }else{
-    $("loginOverlay").classList.remove("hidden");
+    $("loginOverlay")?.classList.remove("hidden");
   }
 }
 function saveProfile(){
@@ -155,19 +155,19 @@ function loginWithNickname(){
   currentNickname=name;
   const old=load(PROFILE_KEY,{nickname:"",score:0});
   save(PROFILE_KEY,{nickname:name,score:old.nickname===name?(old.score||0):0});
-  $("loginOverlay").classList.add("hidden");
+  $("loginOverlay")?.classList.add("hidden");
   updateProfileBar();renderLeaderboard();
 }
 function switchUser(){
   $("nicknameInput").value="";
-  $("loginOverlay").classList.remove("hidden");
+  $("loginOverlay")?.classList.remove("hidden");
 }
-$("loginButton").onclick=loginWithNickname;
-$("nicknameInput").addEventListener("keydown",e=>{if(e.key==="Enter")loginWithNickname()});
-$("switchUserButton").onclick=switchUser;
+if($("loginButton")) $("loginButton").onclick=loginWithNickname;
+if($("nicknameInput")) $("nicknameInput").addEventListener("keydown",e=>{if(e.key==="Enter")loginWithNickname()});
+if($("switchUserButton")) $("switchUserButton").onclick=switchUser;
 
 function startMatchingGame(){
-  if(!currentNickname){$("loginOverlay").classList.remove("hidden");return}
+  if(!currentNickname){$("loginOverlay")?.classList.remove("hidden");return}
   clearInterval(gameTimer);
   gameTime=60;gameScore=0;gameSelected=[];gameLocked=false;
   $("gameTime").textContent=gameTime;$("gameScore").textContent=gameScore;
@@ -302,7 +302,7 @@ start=async function(){
   await originalStart();
   const custom=localStorage.getItem(CUSTOM_WORDS_KEY);
   if(custom){words=JSON.parse(custom);refresh(true);updateStats()}
-  initProfile();renderLeaderboard();
+  renderLeaderboard();
 };
 
 start();
